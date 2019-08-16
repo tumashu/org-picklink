@@ -36,18 +36,6 @@
 
 ;; #+begin_example
 ;; (define-key org-mode-map "\C-cl" 'org-picklink)
-;; (org-picklink-enable)
-;; #+end_example
-
-;; This will bind "C-c l" in org-mode buffer to `org-picklink'.
-
-;; This can also be done manually, e.g.:
-
-;; #+begin_example
-;; (define-key org-agenda-mode-map "q" 'org-picklink-quit-window)
-;; (define-key org-agenda-mode-map (kbd "C-RET") 'org-picklink-push-link)
-;; (define-key org-agenda-mode-map (kbd "RET") 'org-picklink-push-link-and-quit-window)
-;; (define-key org-mode-map "\C-cl" 'org-picklink)
 ;; #+end_example
 
 ;;; Code:
@@ -60,6 +48,14 @@
 
 (defvar org-picklink-breadcrumbs-separator "/"
   "The separator used by org-picklink's breadcrumbs.")
+
+(defvar org-picklink-mode-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap "q" 'org-picklink-quit-window)
+    (define-key keymap (kbd "C-RET") 'org-picklink-push-link)
+    (define-key keymap (kbd "RET") 'org-picklink-push-link-and-quit-window)
+    keymap)
+  "Keymap for org-picklink-mode.")
 
 ;;;###autoload
 (defun org-picklink-push-link ()
@@ -110,6 +106,7 @@ Before quit, this command will do some clean jobs."
   ;; Hide header line in org-agenda window.
   (when org-agenda-buffer
     (with-current-buffer (get-buffer org-agenda-buffer)
+      (org-picklink-mode -1)
       (setq header-line-format nil)))
   (org-agenda-quit)
   ;; Update window point in org-mode window
@@ -164,6 +161,7 @@ This command only useful in org mode buffer."
     ;; Update `header-line-format'
     (when (derived-mode-p 'org-agenda-mode)
       (with-current-buffer (get-buffer org-agenda-buffer)
+        (org-picklink-mode 1)
         (setq header-line-format
               (format
                (substitute-command-keys
@@ -172,18 +170,9 @@ This command only useful in org mode buffer."
                  "to push links to buffer \"%s\". ##"))
                (buffer-name buffer)))))))
 
-(defun org-picklink-keybinding-setup ()
-  "Setup org picklink Keybindings."
-  (define-key org-agenda-mode-map "q" 'org-picklink-quit-window)
-  (define-key org-agenda-mode-map (kbd "C-RET") 'org-picklink-push-link)
-  (define-key org-agenda-mode-map (kbd "RET") 'org-picklink-push-link-and-quit-window))
-
-;;;###autoload
-(defun org-picklink-enable ()
-  "Enable org picklink."
-  (interactive)
-  (add-hook 'org-agenda-mode-hook 'org-picklink-keybinding-setup)
-  (message "org-picklink: Override org-agenda keybindings: `q', `C-RET' and `RET'"))
+(define-minor-mode org-picklink-mode
+  "org picklink mode"
+  nil " org-picklink")
 
 (provide 'org-picklink)
 
