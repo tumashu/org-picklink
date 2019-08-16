@@ -110,9 +110,10 @@ Before quit, this command will do some clean jobs."
       (setq header-line-format nil)))
   (org-agenda-quit)
   ;; Update window point in org-mode window
-  (set-window-point
-   (gethash :window org-picklink-info)
-   (gethash :window-point org-picklink-info))
+  (when (gethash :buffer org-picklink-info)
+    (set-window-point
+     (gethash :window org-picklink-info)
+     (gethash :window-point org-picklink-info)))
   ;; Clean hashtable `org-picklink-info'
   (setq org-picklink-info (clrhash org-picklink-info)))
 
