@@ -61,6 +61,7 @@
 (defvar org-picklink-breadcrumbs-separator "/"
   "The separator used by org-picklink's breadcrumbs.")
 
+;;;###autoload
 (defun org-picklink-push-link ()
   "Push link of current headline to buffer in `org-picklink-info'."
   (interactive)
@@ -101,6 +102,7 @@
             (puthash :window-point (point) org-picklink-info)
             (message "[[id:%s][%s]], will be push to buffer: \"%s\"" id description target-buffer)))))))
 
+;;;###autoload
 (defun org-picklink-quit-window ()
   "Quit org agenda window and return org mode window.
 Before quit, this command will do some clean jobs."
@@ -117,6 +119,7 @@ Before quit, this command will do some clean jobs."
   ;; Clean hashtable `org-picklink-info'
   (setq org-picklink-info (clrhash org-picklink-info)))
 
+;;;###autoload
 (defun org-picklink-push-link-and-quit-window ()
   "Push link to org mode window and quit org agenda window."
   (interactive)
