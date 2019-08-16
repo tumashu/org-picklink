@@ -3,6 +3,9 @@
 ;; Copyright (C) 2017  Free Software Foundation, Inc.
 
 ;; Author: Feng Shu <tumashu@163.com>
+;; Homepage: https://github.com/tumashu/org-picklink
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "24"))
 ;; Keywords: convenience
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -32,6 +35,7 @@
 ;; The simplest installation method is to call:
 
 ;; #+begin_example
+;; (define-key org-mode-map "\C-cl" 'org-picklink)
 ;; (org-picklink-enable)
 ;; #+end_example
 
@@ -41,7 +45,7 @@
 
 ;; #+begin_example
 ;; (define-key org-agenda-mode-map "q" 'org-picklink-quit-window)
-;; (define-key org-agenda-mode-map "\C-c\C-c" 'org-picklink-push-link)
+;; (define-key org-agenda-mode-map (kbd "C-RET") 'org-picklink-push-link)
 ;; (define-key org-agenda-mode-map (kbd "RET") 'org-picklink-push-link-and-quit-window)
 ;; (define-key org-mode-map "\C-cl" 'org-picklink)
 ;; #+end_example
@@ -52,7 +56,7 @@
 
 ;;;###autoload
 (defvar org-picklink-info (make-hash-table)
-  "A hashtable recording buffer, buffer-window and window-point")
+  "A hashtable recording buffer, buffer-window and window point.")
 
 (defvar org-picklink-breadcrumbs-separator "/"
   "The separator used by org-picklink's breadcrumbs.")
@@ -98,7 +102,7 @@
             (message "[[id:%s][%s]], will be push to buffer: \"%s\"" id description target-buffer)))))))
 
 (defun org-picklink-quit-window ()
-  "Quit org-agenda window and return org-mode window.
+  "Quit org agenda window and return org mode window.
 Before quit, this command will do some clean jobs."
   (interactive)
   ;; Hide header line in org-agenda window.
@@ -114,7 +118,7 @@ Before quit, this command will do some clean jobs."
   (setq org-picklink-info (clrhash org-picklink-info)))
 
 (defun org-picklink-push-link-and-quit-window ()
-  "Push link to org-mode window and quit org-agenda window."
+  "Push link to org mode window and quit org agenda window."
   (interactive)
   (if (gethash :buffer org-picklink-info)
       (progn (call-interactively 'org-picklink-push-link)
@@ -131,15 +135,15 @@ Before quit, this command will do some clean jobs."
 
 ;;;###autoload
 (defun org-picklink (&optional search-tag)
-  "Open org-agenda window as a link selector.
+  "Open org agenda window as a link selector.
 
-if region is actived, org-agenda will search string
+if region is actived, ‘org-agenda’ will search string
 in region and replace it with selected link.
 
 When SEARCH-TAG is t, use `org-tags-view' instead
 of `org-search-view'.
 
-This command only useful in org-mode buffer."
+This command only useful in org mode buffer."
   (interactive "P")
   (let ((buffer (current-buffer))
         (search-string
@@ -174,19 +178,17 @@ This command only useful in org-mode buffer."
                (buffer-name buffer)))))))
 
 (defun org-picklink-keybinding-setup ()
-  "Setup org-picklink Keybindings."
-  (define-key org-mode-map "\C-cl" 'org-picklink)
+  "Setup org picklink Keybindings."
   (define-key org-agenda-mode-map "q" 'org-picklink-quit-window)
-  (define-key org-agenda-mode-map "\C-c\C-c" 'org-picklink-push-link)
+  (define-key org-agenda-mode-map (kbd "C-RET") 'org-picklink-push-link)
   (define-key org-agenda-mode-map (kbd "RET") 'org-picklink-push-link-and-quit-window))
 
 ;;;###autoload
 (defun org-picklink-enable ()
-  "Enable org-picklink"
+  "Enable org picklink."
   (interactive)
   (add-hook 'org-agenda-mode-hook 'org-picklink-keybinding-setup)
-  (add-hook 'org-mode-hook 'org-picklink-keybinding-setup)
-  (message "org-picklink: Override org-agenda keybindings: `q', `C-c C-c' and `RET'"))
+  (message "org-picklink: Override org-agenda keybindings: `q', `C-RET' and `RET'"))
 
 (provide 'org-picklink)
 
