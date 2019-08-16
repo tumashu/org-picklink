@@ -52,8 +52,8 @@
 (defvar org-picklink-mode-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap "q" 'org-picklink-quit-window)
-    (define-key keymap (kbd "C-RET") 'org-picklink-push-link)
-    (define-key keymap (kbd "RET") 'org-picklink-push-link-and-quit-window)
+    (define-key keymap (kbd "C-<return>") 'org-picklink-push-link)
+    (define-key keymap (kbd "<return>") 'org-picklink-push-link-and-quit-window)
     keymap)
   "Keymap for org-picklink-mode.")
 
@@ -91,20 +91,28 @@
                 (or selected-string
                     (concat breadcrumbs (org-entry-get (point) "ITEM"))))
           (with-current-buffer target-buffer
-            ;; When a link is found at point, insert ", "
-            (when (save-excursion
-                    (let* ((end (point))
-                           (begin (line-beginning-position))
-                           (string (buffer-substring-no-properties
-                                    begin end)))
-                      (and (string-match-p "]]$" string)
-                           (not (string-match-p ", *$" string)))))
-              (insert ", "))
-            (org-insert-link nil (format "id:%s" id) description)
-            (puthash :window-point (point) org-picklink-info)
-            (message "[[id:%s][%s]] -> \"%s\""
-                     (concat (substring id 0 6) "...")
-                     description target-buffer)))))))
+            (goto-char (gethash :window-point org-picklink-info))
+            ;; We should test the origin window-point change or not.
+            (if (equal (sha1 (buffer-substring-no-properties (point-min) (point)))
+                       (gethash :hash org-picklink-info))
+                (progn
+                  ;; When a link is found at point, insert ", "
+                  (when (save-excursion
+                          (let* ((end (point))
+                                 (begin (line-beginning-position))
+                                 (string (buffer-substring-no-properties
+                                          begin end)))
+                            (and (string-match-p "]]$" string)
+                                 (not (string-match-p ", *$" string)))))
+                    (insert ", "))
+                  (org-insert-link nil (format "id:%s" id) description)
+                  (puthash :window-point (point) org-picklink-info)
+                  (puthash :links nil org-picklink-info)
+                  (message "[[id:%s][%s]] -> \"%s\""
+                           (concat (substring id 0 6) "...")
+                           description target-buffer))
+              (push (cons id description) (gethash :links org-picklink-info))
+              (message "WARN: please move to proper position and run `org-picklink' again."))))))))
 
 ;;;###autoload
 (defun org-picklink-quit-window ()
@@ -123,7 +131,9 @@ Before quit, this command will do some clean jobs."
      (gethash :window org-picklink-info)
      (gethash :window-point org-picklink-info)))
   ;; Clean hashtable `org-picklink-info'
-  (setq org-picklink-info (clrhash org-picklink-info)))
+  (puthash :buffer nil org-picklink-info)
+  (puthash :window nil org-picklink-info)
+  (puthash :window-point nil org-picklink-info))
 
 ;;;###autoload
 (defun org-picklink-push-link-and-quit-window ()
@@ -146,38 +156,45 @@ of `org-search-view'.
 
 This command only useful in org mode buffer."
   (interactive "P")
-  (let ((buffer (current-buffer))
-        (search-string
-         (if mark-active
-             (buffer-substring-no-properties
-              (region-beginning) (region-end))
-           "")))
-    ;; Update `org-picklink-info'
-    (if (derived-mode-p 'org-mode)
-        (progn
-          (puthash :buffer buffer org-picklink-info)
-          (puthash :window (get-buffer-window) org-picklink-info)
-          (puthash :window-point (point) org-picklink-info))
-      (setq org-picklink-info (clrhash org-picklink-info)
-            search-string nil))
-    ;; Call org-agenda
-    (when (and search-string (> (length search-string) 0))
-      (delete-region (region-beginning) (region-end))
-      (puthash :window-point (point) org-picklink-info))
-    (if search-tag
-        (org-tags-view nil search-string)
-      (org-search-view nil search-string))
-    ;; Update `header-line-format'
-    (when (derived-mode-p 'org-agenda-mode)
-      (with-current-buffer (get-buffer org-agenda-buffer)
-        (org-picklink-mode 1)
-        (setq header-line-format
-              (format
-               (substitute-command-keys
-                (concat
-                 "## Type `\\[org-picklink-push-link]' or `\\[org-picklink-push-link-and-quit-window]' "
-                 "to push links to buffer \"%s\". ##"))
-               (buffer-name buffer)))))))
+  (if (gethash :links org-picklink-info)
+      (let ((id (car (car (gethash :links org-picklink-info))))
+            (description (cdr (car (gethash :links org-picklink-info)))))
+        (org-insert-link nil (format "id:%s" id) description)
+        (pop (gethash :links org-picklink-info)))
+    (let ((buffer (current-buffer))
+          (search-string
+           (if mark-active
+               (buffer-substring-no-properties
+                (region-beginning) (region-end))
+             "")))
+      ;; Update `org-picklink-info'
+      (if (derived-mode-p 'org-mode)
+          (progn
+            (puthash :buffer buffer org-picklink-info)
+            (puthash :window (get-buffer-window) org-picklink-info)
+            (puthash :window-point (point) org-picklink-info)
+            (puthash :hash (sha1 (buffer-substring-no-properties (point-min) (point)))
+                     org-picklink-info))
+        (setq org-picklink-info (clrhash org-picklink-info)
+              search-string nil))
+      ;; Call org-agenda
+      (when (and search-string (> (length search-string) 0))
+        (delete-region (region-beginning) (region-end))
+        (puthash :window-point (point) org-picklink-info))
+      (if search-tag
+          (org-tags-view nil search-string)
+        (org-search-view nil search-string))
+      ;; Update `header-line-format'
+      (when (derived-mode-p 'org-agenda-mode)
+        (with-current-buffer (get-buffer org-agenda-buffer)
+          (org-picklink-mode 1)
+          (setq header-line-format
+                (format
+                 (substitute-command-keys
+                  (concat
+                   "## Type `\\[org-picklink-push-link]' or `\\[org-picklink-push-link-and-quit-window]' "
+                   "to push links to buffer \"%s\". ##"))
+                 (buffer-name buffer))))))))
 
 (define-minor-mode org-picklink-mode
   "org picklink mode"
