@@ -125,14 +125,6 @@ Before quit, this command will do some clean jobs."
              (org-picklink-quit-window))
     (call-interactively 'org-agenda-switch-to)))
 
-(defun org-picklink-grab-word ()
-  "Grab word at point, which used to build search string."
-  (buffer-substring
-   (point)
-   (save-excursion
-     (skip-syntax-backward "w_")
-     (point))))
-
 ;;;###autoload
 (defun org-picklink (&optional search-tag)
   "Open org agenda window as a link selector.
