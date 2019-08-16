@@ -102,7 +102,9 @@
               (insert ", "))
             (org-insert-link nil (format "id:%s" id) description)
             (puthash :window-point (point) org-picklink-info)
-            (message "[[id:%s][%s]], will be push to buffer: \"%s\"" id description target-buffer)))))))
+            (message "[[id:%s][%s]] -> \"%s\""
+                     (concat (substring id 0 6) "...")
+                     description target-buffer)))))))
 
 ;;;###autoload
 (defun org-picklink-quit-window ()
