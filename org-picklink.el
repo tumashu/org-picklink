@@ -62,7 +62,11 @@
   "Push link of current headline to buffer in `org-picklink-info'."
   (interactive)
   (org-agenda-check-no-diary)
-  (let* ((target-buffer (gethash :buffer org-picklink-info))
+  (let* ((selected-string
+          (when mark-active
+            (buffer-substring-no-properties
+             (region-beginning) (region-end))))
+         (target-buffer (gethash :buffer org-picklink-info))
          (hdmarker (or (org-get-at-bol 'org-hd-marker)
 		       (org-agenda-error)))
 	 (buffer (marker-buffer hdmarker))
@@ -83,7 +87,9 @@
 	  (goto-char pos)
 	  (org-show-context 'agenda)
           (setq id (org-id-get (point) t))
-          (setq description (concat breadcrumbs (org-entry-get (point) "ITEM")))
+          (setq description
+                (or selected-string
+                    (concat breadcrumbs (org-entry-get (point) "ITEM"))))
           (with-current-buffer target-buffer
             ;; When a link is found at point, insert ", "
             (when (save-excursion
