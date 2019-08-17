@@ -72,14 +72,16 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
     (org-with-point-at (or (org-get-at-bol 'org-hd-marker)
 		           (org-agenda-error))
       (let* ((id (concat "id:" (org-id-get (point) t)))
-             (s (when (and (not ignore-breadcrumbs)
-                           org-prefix-has-breadcrumbs)
-                  (org-format-outline-path
-                   (org-get-outline-path)
-	           (1- (frame-width))
-	           nil org-picklink-breadcrumbs-separator)))
+             (breadcrumbs
+              (when (and (not ignore-breadcrumbs)
+                         org-prefix-has-breadcrumbs)
+                (let ((s (org-format-outline-path
+                          (org-get-outline-path)
+	                  (1- (frame-width))
+	                  nil org-picklink-breadcrumbs-separator)))
+                  (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator)))))
              (desc (or selected-string
-                       (concat (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator))
+                       (concat breadcrumbs
                                (org-entry-get (point) "ITEM")))))
         (push (list :link id :description desc :type "id") org-picklink-links)
         (message "Store link: [[%s][%s]]" (concat (substring id 0 9) "...") desc)))))
