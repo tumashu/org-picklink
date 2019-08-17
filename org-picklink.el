@@ -62,35 +62,35 @@
   "Push link of current headline to buffer in `org-picklink-info'."
   (interactive)
   (org-agenda-check-no-diary)
-  (when-let* ((target-buffer (gethash :buffer org-picklink-info))
-              (inhibit-read-only t)
-              (selected-string
-               (when mark-active
-                 (buffer-substring-no-properties
-                  (region-beginning) (region-end))))
-              (hdmarker (or (org-get-at-bol 'org-hd-marker)
-		            (org-agenda-error)))
-              (buffer (marker-buffer hdmarker))
-              (pos (marker-position hdmarker))
-              (breadcrumbs
-               (when org-prefix-has-breadcrumbs
-                 (org-with-point-at (org-get-at-bol 'org-marker)
-	           (let ((s (org-format-outline-path
-                             (org-get-outline-path)
-		             (1- (frame-width))
-		             nil org-picklink-breadcrumbs-separator)))
-	             (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator))))))
-              id description)
-    (org-with-remote-undo buffer
-      (with-current-buffer buffer
-        (widen)
-        (goto-char pos)
-        (org-show-context 'agenda)
-        (setq id (org-id-get (point) t))
-        (setq description
-              (or selected-string
-                  (concat breadcrumbs (org-entry-get (point) "ITEM"))))
-        (org-picklink--push-link target-buffer id description)))))
+  (when-let* ((target-buffer (gethash :buffer org-picklink-info)))
+    (let* ((inhibit-read-only t)
+           (selected-string
+            (when mark-active
+              (buffer-substring-no-properties
+               (region-beginning) (region-end))))
+           (hdmarker (or (org-get-at-bol 'org-hd-marker)
+		         (org-agenda-error)))
+           (buffer (marker-buffer hdmarker))
+           (pos (marker-position hdmarker))
+           (breadcrumbs
+            (when org-prefix-has-breadcrumbs
+              (org-with-point-at (org-get-at-bol 'org-marker)
+	        (let ((s (org-format-outline-path
+                          (org-get-outline-path)
+		          (1- (frame-width))
+		          nil org-picklink-breadcrumbs-separator)))
+	          (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator)))))))
+      (org-with-remote-undo buffer
+        (with-current-buffer buffer
+          (widen)
+          (goto-char pos)
+          (org-show-context 'agenda)
+          (org-picklink--push-link
+           target-buffer
+           (org-id-get (point) t)
+           (or selected-string
+               (concat breadcrumbs
+                       (org-entry-get (point) "ITEM")))))))))
 
 (defun org-picklink--push-link (target-buffer id description)
   "Internal function of `org-picklink-push-link'."
@@ -168,7 +168,8 @@ This command only useful in org mode buffer."
             (description (cdr (car (gethash :links org-picklink-info)))))
         (org-insert-link nil (format "id:%s" id) description)
         (pop (gethash :links org-picklink-info)))
-    (let ((buffer (current-buffer))
+    (let ((org-agenda-window-setup 'only-window)
+          (buffer (current-buffer))
           (search-string
            (if mark-active
                (buffer-substring-no-properties
