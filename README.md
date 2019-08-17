@@ -3,10 +3,10 @@ Note: this file is auto converted from org-picklink.el by [el2org](https://githu
 
 # &#30446;&#24405;
 
-1.  [org-picklink's README](#orgc47a72d)
+1.  [org-picklink's README](#org6e75973)
 
 
-<a id="orgc47a72d"></a>
+<a id="org6e75973"></a>
 
 # org-picklink's README
 
@@ -19,5 +19,5 @@ its link to origin org-mode buffer.
 
 The simplest installation method is to call:
 
-    (define-key org-mode-map "\C-cl" 'org-picklink)
+    (define-key org-mode-map "\C-cj" 'org-picklink)
 

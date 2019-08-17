@@ -35,7 +35,7 @@
 ;; The simplest installation method is to call:
 
 ;; #+begin_example
-;; (define-key org-mode-map "\C-cl" 'org-picklink)
+;; (define-key org-mode-map "\C-cj" 'org-picklink)
 ;; #+end_example
 
 ;;; Code:
