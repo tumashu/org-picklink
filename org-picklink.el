@@ -40,6 +40,7 @@
 
 ;;; Code:
 ;; * org-picklink's code                         :CODE:
+(require 'subr-x)
 (require 'org-agenda)
 
 ;;;###autoload
