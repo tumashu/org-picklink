@@ -68,6 +68,7 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
          (when mark-active
            (buffer-substring-no-properties
             (region-beginning) (region-end)))))
+    (deactivate-mark)
     (org-with-point-at (or (org-get-at-bol 'org-hd-marker)
 		           (org-agenda-error))
       (let* ((id (concat "id:" (org-id-get (point) t)))
