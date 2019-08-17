@@ -93,8 +93,7 @@
           (with-current-buffer target-buffer
             (goto-char (gethash :window-point org-picklink-info))
             ;; We should test the origin window-point change or not.
-            (if (equal (sha1 (buffer-substring-no-properties (point-min) (point)))
-                       (gethash :hash org-picklink-info))
+            (if (equal (org-picklink-hash) (gethash :hash org-picklink-info))
                 (progn
                   ;; When a link is found at point, insert ", "
                   (when (save-excursion
@@ -113,6 +112,10 @@
                            description target-buffer))
               (push (cons id description) (gethash :links org-picklink-info))
               (message "WARN: please move to proper position and run `org-picklink' again."))))))))
+
+(defun org-picklink-hash ()
+  "Return the sha1 of the content before point."
+  (sha1 (buffer-substring-no-properties (point-min) (point))))
 
 ;;;###autoload
 (defun org-picklink-quit-window ()
@@ -173,8 +176,7 @@ This command only useful in org mode buffer."
             (puthash :buffer buffer org-picklink-info)
             (puthash :window (get-buffer-window) org-picklink-info)
             (puthash :window-point (point) org-picklink-info)
-            (puthash :hash (sha1 (buffer-substring-no-properties (point-min) (point)))
-                     org-picklink-info))
+            (puthash :hash (org-picklink-hash) org-picklink-info))
         (setq org-picklink-info (clrhash org-picklink-info)
               search-string nil))
       ;; Call org-agenda
