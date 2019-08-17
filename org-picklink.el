@@ -58,9 +58,11 @@
   "Keymap for org-picklink-mode.")
 
 ;;;###autoload
-(defun org-picklink-push-link ()
-  "Push link of current headline to buffer in `org-picklink-info'."
-  (interactive)
+(defun org-picklink-push-link (&optional ignore-breadcrumbs)
+  "Push link of current headline to buffer in `org-picklink-info'.
+
+If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
+  (interactive "P")
   (org-agenda-check-no-diary)
   (when-let* ((target-buffer (gethash :buffer org-picklink-info)))
     (let* ((inhibit-read-only t)
@@ -73,7 +75,8 @@
            (buffer (marker-buffer hdmarker))
            (pos (marker-position hdmarker))
            (breadcrumbs
-            (when org-prefix-has-breadcrumbs
+            (when (and (not ignore-breadcrumbs)
+                       org-prefix-has-breadcrumbs)
               (org-with-point-at (org-get-at-bol 'org-marker)
 	        (let ((s (org-format-outline-path
                           (org-get-outline-path)
@@ -89,7 +92,7 @@
            target-buffer
            (org-id-get (point) t)
            (or selected-string
-               (concat breadcrumbs
+               (concat (or breadcrumbs "")
                        (org-entry-get (point) "ITEM")))))))))
 
 (defun org-picklink--push-link (target-buffer id description)
