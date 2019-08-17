@@ -40,7 +40,7 @@
 
 ;;; Code:
 ;; * org-picklink's code                         :CODE:
-(require 'org)
+(require 'org-agenda)
 
 ;;;###autoload
 (defvar org-picklink-info (make-hash-table)
