@@ -190,7 +190,11 @@ This command only useful in org mode buffer."
         (puthash :window-point (point) org-picklink-info))
       (if search-tag
           (org-tags-view nil search-string)
-        (org-search-view nil search-string))
+        (org-search-view
+         nil
+         (if (= (length search-string) 0)
+             "*"
+           search-string)))
       ;; Update `header-line-format'
       (when (derived-mode-p 'org-agenda-mode)
         (with-current-buffer (get-buffer org-agenda-buffer)
