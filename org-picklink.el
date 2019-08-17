@@ -96,7 +96,9 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
     (org-insert-link nil (plist-get link :link) (plist-get link :description))
     (pop org-picklink-links)
     (when org-picklink-links
-      (insert " "))))
+      (cond ((org-in-item-p)
+             (call-interactively #'org-insert-item))
+            (t (insert " "))))))
 
 ;;;###autoload
 (defun org-picklink-store-link-and-quit-window ()
@@ -137,16 +139,15 @@ This command only useful in org mode buffer."
              "*"
            search-string)))
       ;; Update `header-line-format'
-      (when (derived-mode-p 'org-agenda-mode)
-        (with-current-buffer (get-buffer org-agenda-buffer)
-          (org-picklink-mode 1)
-          (setq header-line-format
-                (format
-                 (substitute-command-keys
-                  (concat
-                   "## Type `\\[org-picklink-store-link]' or `\\[org-picklink-store-link-and-quit-window]' "
-                   "to push links to buffer \"%s\". ##"))
-                 (buffer-name buffer))))))))
+      (with-current-buffer (get-buffer org-agenda-buffer)
+        (org-picklink-mode 1)
+        (setq header-line-format
+              (format
+               (substitute-command-keys
+                (concat
+                 "## Type `\\[org-picklink-store-link]' or `\\[org-picklink-store-link-and-quit-window]' "
+                 "to push links to buffer \"%s\". ##"))
+               (buffer-name buffer)))))))
 
 (define-minor-mode org-picklink-mode
   "org picklink mode"
