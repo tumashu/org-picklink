@@ -123,7 +123,10 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
 
 (defun org-picklink-hash ()
   "Return the sha1 of the content before point."
-  (sha1 (buffer-substring-no-properties (point-min) (point))))
+  (save-excursion
+    (when mark-active
+      (goto-char (region-beginning)))
+    (sha1 (buffer-substring-no-properties (point-min) (point)))))
 
 ;;;###autoload
 (defun org-picklink-quit-window ()
