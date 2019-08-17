@@ -62,56 +62,60 @@
   "Push link of current headline to buffer in `org-picklink-info'."
   (interactive)
   (org-agenda-check-no-diary)
-  (let* ((selected-string
-          (when mark-active
-            (buffer-substring-no-properties
-             (region-beginning) (region-end))))
-         (target-buffer (gethash :buffer org-picklink-info))
-         (hdmarker (or (org-get-at-bol 'org-hd-marker)
-		       (org-agenda-error)))
-	 (buffer (marker-buffer hdmarker))
-	 (pos (marker-position hdmarker))
-	 (inhibit-read-only t)
-	 id description breadcrumbs)
-    (when org-prefix-has-breadcrumbs
-      (setq breadcrumbs
-            (org-with-point-at (org-get-at-bol 'org-marker)
-	      (let ((s (org-format-outline-path (org-get-outline-path)
-						(1- (frame-width))
-						nil org-picklink-breadcrumbs-separator)))
-		(if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator))))))
-    (when target-buffer
-      (org-with-remote-undo buffer
-        (with-current-buffer buffer
-	  (widen)
-	  (goto-char pos)
-	  (org-show-context 'agenda)
-          (setq id (org-id-get (point) t))
-          (setq description
-                (or selected-string
-                    (concat breadcrumbs (org-entry-get (point) "ITEM"))))
-          (with-current-buffer target-buffer
-            (goto-char (gethash :window-point org-picklink-info))
-            ;; We should test the origin window-point change or not.
-            (if (equal (org-picklink-hash) (gethash :hash org-picklink-info))
-                (progn
-                  ;; When a link is found at point, insert ", "
-                  (when (save-excursion
-                          (let* ((end (point))
-                                 (begin (line-beginning-position))
-                                 (string (buffer-substring-no-properties
-                                          begin end)))
-                            (and (string-match-p "]]$" string)
-                                 (not (string-match-p ", *$" string)))))
-                    (insert ", "))
-                  (org-insert-link nil (format "id:%s" id) description)
-                  (puthash :window-point (point) org-picklink-info)
-                  (puthash :links nil org-picklink-info)
-                  (message "[[id:%s][%s]] -> \"%s\""
-                           (concat (substring id 0 6) "...")
-                           description target-buffer))
-              (push (cons id description) (gethash :links org-picklink-info))
-              (message "WARN: please move to proper position and run `org-picklink' again."))))))))
+  (when-let* ((target-buffer (gethash :buffer org-picklink-info))
+              (inhibit-read-only t)
+              (selected-string
+               (when mark-active
+                 (buffer-substring-no-properties
+                  (region-beginning) (region-end))))
+              (hdmarker (or (org-get-at-bol 'org-hd-marker)
+		            (org-agenda-error)))
+              (buffer (marker-buffer hdmarker))
+              (pos (marker-position hdmarker))
+              (breadcrumbs
+               (when org-prefix-has-breadcrumbs
+                 (org-with-point-at (org-get-at-bol 'org-marker)
+	           (let ((s (org-format-outline-path
+                             (org-get-outline-path)
+		             (1- (frame-width))
+		             nil org-picklink-breadcrumbs-separator)))
+	             (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator))))))
+              id description)
+    (org-with-remote-undo buffer
+      (with-current-buffer buffer
+        (widen)
+        (goto-char pos)
+        (org-show-context 'agenda)
+        (setq id (org-id-get (point) t))
+        (setq description
+              (or selected-string
+                  (concat breadcrumbs (org-entry-get (point) "ITEM"))))
+        (org-picklink--push-link target-buffer id description)))))
+
+(defun org-picklink--push-link (target-buffer id description)
+  "Internal function of `org-picklink-push-link'."
+  (with-current-buffer target-buffer
+    (goto-char (gethash :window-point org-picklink-info))
+    ;; We should test the origin window-point change or not.
+    (if (equal (org-picklink-hash) (gethash :hash org-picklink-info))
+        (progn
+          ;; When a link is found at point, insert ", "
+          (when (save-excursion
+                  (let* ((end (point))
+                         (begin (line-beginning-position))
+                         (string (buffer-substring-no-properties
+                                  begin end)))
+                    (and (string-match-p "]]$" string)
+                         (not (string-match-p ", *$" string)))))
+            (insert ", "))
+          (org-insert-link nil (format "id:%s" id) description)
+          (puthash :window-point (point) org-picklink-info)
+          (puthash :links nil org-picklink-info)
+          (message "[[id:%s][%s]] -> \"%s\""
+                   (concat (substring id 0 6) "...")
+                   description target-buffer))
+      (push (cons id description) (gethash :links org-picklink-info))
+      (message "WARN: please move to proper position and run `org-picklink' again."))))
 
 (defun org-picklink-hash ()
   "Return the sha1 of the content before point."
