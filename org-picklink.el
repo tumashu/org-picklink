@@ -53,7 +53,7 @@
 (defvar org-picklink-mode-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap "q" 'org-picklink-quit-window)
-    (define-key keymap (kbd "C-<return>") 'org-picklink-store-link)
+    (define-key keymap "i" 'org-picklink-store-link)
     (define-key keymap (kbd "<return>") 'org-picklink-store-link-and-quit-window)
     keymap)
   "Keymap for org-picklink-mode.")
@@ -64,7 +64,8 @@
 
 If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
   (interactive "P")
-  (let ((selected-string
+  (let ((org-agenda-show-outline-path nil)
+        (selected-string
          (when mark-active
            (buffer-substring-no-properties
             (region-beginning) (region-end)))))
@@ -82,9 +83,13 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
                   (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator)))))
              (desc (or selected-string
                        (concat breadcrumbs
-                               (org-entry-get (point) "ITEM")))))
-        (push (list :link id :description desc :type "id") org-picklink-links)
-        (message "Store link: [[%s][%s]]" (concat (substring id 0 9) "...") desc)))))
+                               (org-entry-get (point) "ITEM"))))
+             (link (list :link id :description desc :type "id")))
+        (if (member link org-picklink-links)
+            (message "This link has been stored.")
+          (message "Store link: [[%s][%s]]" (concat (substring id 0 9) "...") desc)
+          (push link org-picklink-links))))
+    (org-agenda-next-item 1)))
 
 ;;;###autoload
 (defun org-picklink-quit-window ()
