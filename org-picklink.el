@@ -44,8 +44,8 @@
 (require 'org-agenda)
 
 ;;;###autoload
-(defvar org-picklink-info (make-hash-table)
-  "A hashtable recording buffer, buffer-window and window point.")
+(defvar org-picklink-links nil
+  "Record all links info.")
 
 (defvar org-picklink-breadcrumbs-separator "/"
   "The separator used by org-picklink's breadcrumbs.")
@@ -53,110 +53,57 @@
 (defvar org-picklink-mode-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap "q" 'org-picklink-quit-window)
-    (define-key keymap (kbd "C-<return>") 'org-picklink-push-link)
-    (define-key keymap (kbd "<return>") 'org-picklink-push-link-and-quit-window)
+    (define-key keymap (kbd "C-<return>") 'org-picklink-store-link)
+    (define-key keymap (kbd "<return>") 'org-picklink-store-link-and-quit-window)
     keymap)
   "Keymap for org-picklink-mode.")
 
 ;;;###autoload
-(defun org-picklink-push-link (&optional ignore-breadcrumbs)
-  "Push link of current headline to buffer in `org-picklink-info'.
+(defun org-picklink-store-link (&optional ignore-breadcrumbs)
+  "Store id link of current headline.
 
 If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
   (interactive "P")
-  (org-agenda-check-no-diary)
-  (when-let* ((target-buffer (gethash :buffer org-picklink-info)))
-    (let* ((inhibit-read-only t)
-           (selected-string
-            (when mark-active
-              (buffer-substring-no-properties
-               (region-beginning) (region-end))))
-           (hdmarker (or (org-get-at-bol 'org-hd-marker)
-		         (org-agenda-error)))
-           (buffer (marker-buffer hdmarker))
-           (pos (marker-position hdmarker))
-           (breadcrumbs
-            (when (and (not ignore-breadcrumbs)
-                       org-prefix-has-breadcrumbs)
-              (org-with-point-at (org-get-at-bol 'org-marker)
-	        (let ((s (org-format-outline-path
-                          (org-get-outline-path)
-		          (1- (frame-width))
-		          nil org-picklink-breadcrumbs-separator)))
-	          (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator)))))))
-      (org-with-remote-undo buffer
-        (with-current-buffer buffer
-          (widen)
-          (goto-char pos)
-          (org-show-context 'agenda)
-          (org-picklink--push-link
-           target-buffer
-           (org-id-get (point) t)
-           (or selected-string
-               (concat (or breadcrumbs "")
-                       (org-entry-get (point) "ITEM")))))))))
-
-(defun org-picklink--push-link (target-buffer id description)
-  "Internal function of `org-picklink-push-link'."
-  (with-current-buffer target-buffer
-    (goto-char (gethash :window-point org-picklink-info))
-    ;; We should test the origin window-point change or not.
-    (if (equal (org-picklink-hash) (gethash :hash org-picklink-info))
-        (progn
-          ;; When a link is found at point, insert ", "
-          (when (save-excursion
-                  (let* ((end (point))
-                         (begin (line-beginning-position))
-                         (string (buffer-substring-no-properties
-                                  begin end)))
-                    (and (string-match-p "]]$" string)
-                         (not (string-match-p ", *$" string)))))
-            (insert ", "))
-          (org-insert-link nil (format "id:%s" id) description)
-          (puthash :window-point (point) org-picklink-info)
-          (puthash :links nil org-picklink-info)
-          (message "[[id:%s][%s]] -> \"%s\""
-                   (concat (substring id 0 6) "...")
-                   description target-buffer))
-      (push (cons id description) (gethash :links org-picklink-info))
-      (message "WARN: please move to proper position and run `org-picklink' again."))))
-
-(defun org-picklink-hash ()
-  "Return the sha1 of the content before point."
-  (save-excursion
-    (when mark-active
-      (goto-char (region-beginning)))
-    (sha1 (buffer-substring-no-properties (point-min) (point)))))
+  (let ((selected-string
+         (when mark-active
+           (buffer-substring-no-properties
+            (region-beginning) (region-end)))))
+    (org-with-point-at (or (org-get-at-bol 'org-hd-marker)
+		           (org-agenda-error))
+      (let* ((id (concat "id:" (org-id-get (point) t)))
+             (s (when (and (not ignore-breadcrumbs)
+                           org-prefix-has-breadcrumbs)
+                  (org-format-outline-path
+                   (org-get-outline-path)
+	           (1- (frame-width))
+	           nil org-picklink-breadcrumbs-separator)))
+             (desc (or selected-string
+                       (concat (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator))
+                               (org-entry-get (point) "ITEM")))))
+        (push (list :link id :description desc :type "id") org-picklink-links)
+        (message "Store link: [[%s][%s]]" (concat (substring id 0 9) "...") desc)))))
 
 ;;;###autoload
 (defun org-picklink-quit-window ()
-  "Quit org agenda window and return org mode window.
-Before quit, this command will do some clean jobs."
+  "Quit org agenda window and insert links to org mode buffer."
   (interactive)
-  ;; Hide header line in org-agenda window.
-  (when org-agenda-buffer
-    (with-current-buffer (get-buffer org-agenda-buffer)
-      (org-picklink-mode -1)
-      (setq header-line-format nil)))
+  (setq header-line-format nil)
+  (org-picklink-mode -1)
   (org-agenda-quit)
-  ;; Update window point in org-mode window
-  (when (gethash :buffer org-picklink-info)
-    (set-window-point
-     (gethash :window org-picklink-info)
-     (gethash :window-point org-picklink-info)))
-  ;; Clean hashtable `org-picklink-info'
-  (puthash :buffer nil org-picklink-info)
-  (puthash :window nil org-picklink-info)
-  (puthash :window-point nil org-picklink-info))
+  (setq org-picklink-links
+        (reverse org-picklink-links))
+  (dolist (link org-picklink-links)
+    (org-insert-link nil (plist-get link :link) (plist-get link :description))
+    (pop org-picklink-links)
+    (when org-picklink-links
+      (insert " "))))
 
 ;;;###autoload
-(defun org-picklink-push-link-and-quit-window ()
-  "Push link to org mode window and quit org agenda window."
+(defun org-picklink-store-link-and-quit-window ()
+  "Store link then quit org agenda window."
   (interactive)
-  (if (gethash :buffer org-picklink-info)
-      (progn (call-interactively 'org-picklink-push-link)
-             (org-picklink-quit-window))
-    (call-interactively 'org-agenda-switch-to)))
+  (call-interactively 'org-picklink-store-link)
+  (org-picklink-quit-window))
 
 ;;;###autoload
 (defun org-picklink (&optional search-tag)
@@ -170,11 +117,8 @@ of `org-search-view'.
 
 This command only useful in org mode buffer."
   (interactive "P")
-  (if (gethash :links org-picklink-info)
-      (let ((id (car (car (gethash :links org-picklink-info))))
-            (description (cdr (car (gethash :links org-picklink-info)))))
-        (org-insert-link nil (format "id:%s" id) description)
-        (pop (gethash :links org-picklink-info)))
+  (if (not (derived-mode-p 'org-mode))
+      (message "org-picklink works only in org-mode!")
     (let ((org-agenda-window-setup 'only-window)
           (buffer (current-buffer))
           (search-string
@@ -182,19 +126,9 @@ This command only useful in org mode buffer."
                (buffer-substring-no-properties
                 (region-beginning) (region-end))
              "")))
-      ;; Update `org-picklink-info'
-      (if (derived-mode-p 'org-mode)
-          (progn
-            (puthash :buffer buffer org-picklink-info)
-            (puthash :window (get-buffer-window) org-picklink-info)
-            (puthash :window-point (point) org-picklink-info)
-            (puthash :hash (org-picklink-hash) org-picklink-info))
-        (setq org-picklink-info (clrhash org-picklink-info)
-              search-string nil))
       ;; Call org-agenda
       (when (and search-string (> (length search-string) 0))
-        (delete-region (region-beginning) (region-end))
-        (puthash :window-point (point) org-picklink-info))
+        (delete-region (region-beginning) (region-end)))
       (if search-tag
           (org-tags-view nil search-string)
         (org-search-view
@@ -210,7 +144,7 @@ This command only useful in org mode buffer."
                 (format
                  (substitute-command-keys
                   (concat
-                   "## Type `\\[org-picklink-push-link]' or `\\[org-picklink-push-link-and-quit-window]' "
+                   "## Type `\\[org-picklink-store-link]' or `\\[org-picklink-store-link-and-quit-window]' "
                    "to push links to buffer \"%s\". ##"))
                  (buffer-name buffer))))))))
 
