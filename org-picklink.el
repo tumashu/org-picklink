@@ -95,6 +95,15 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
   (org-agenda-quit)
   (setq org-picklink-links
         (reverse org-picklink-links))
+  ;; When a link is found at point, insert ", "
+  (when (save-excursion
+          (let* ((end (point))
+                 (begin (line-beginning-position))
+                 (string (buffer-substring-no-properties
+                          begin end)))
+            (and (string-match-p "]]$" string)
+                 (not (string-match-p ", *$" string)))))
+    (insert ", "))
   (dolist (link org-picklink-links)
     (org-insert-link nil (plist-get link :link) (plist-get link :description))
     (pop org-picklink-links)
