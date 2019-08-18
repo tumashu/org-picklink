@@ -5,7 +5,7 @@
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Homepage: https://github.com/tumashu/org-picklink
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "24"))
+;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: convenience
 
 ;; This program is free software; you can redistribute it and/or modify
