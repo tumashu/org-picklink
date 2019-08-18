@@ -162,8 +162,11 @@ This command only useful in org mode buffer."
               (format
                (substitute-command-keys
                 (concat
-                 "## Type `\\[org-picklink-store-link]' or `\\[org-picklink-store-link-and-quit-window]' "
-                 "to push links to buffer \"%s\". ##"))
+                 "## "
+                 "`\\[org-picklink-store-link]':Store Link  "
+                 "`\\[org-picklink-quit-window]':Quit  "
+                 "`\\[org-picklink-store-link-and-quit-window]':Store and Quit "
+                 "##"))
                (buffer-name buffer)))))))
 
 (define-minor-mode org-picklink-mode
