@@ -1,6 +1,6 @@
 ;;; org-picklink.el --- Pick a headline link from org-agenda      -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2017  Free Software Foundation, Inc.
+;; Copyright (C) 2019 Feng Shu <tumashu@163.com>
 
 ;; Author: Feng Shu <tumashu@163.com>
 ;; Homepage: https://github.com/tumashu/org-picklink
@@ -19,7 +19,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
