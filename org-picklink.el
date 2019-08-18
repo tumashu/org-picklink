@@ -59,7 +59,7 @@
     (define-key keymap "b" 'org-picklink-toggle-breadcrumbs)
     (define-key keymap (kbd "<return>") 'org-picklink-store-link-and-quit-window)
     keymap)
-  "Keymap for org-picklink-mode.")
+  "Keymap for org picklink mode.")
 
 ;;;###autoload
 (defun org-picklink-store-link (&optional breadcrumbs)
