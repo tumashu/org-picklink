@@ -105,6 +105,14 @@ description."
       (message "org-picklink: breadcrumbs is enabled.")
     (message "org-picklink: breadcrumbs is disabled.")))
 
+(defun org-picklink-grab-word ()
+  "Grab word at point, which used to build search string."
+  (buffer-substring
+   (point)
+   (save-excursion
+     (skip-syntax-backward "w_")
+     (point))))
+
 ;;;###autoload
 (defun org-picklink-quit-window ()
   "Quit org agenda window and insert links to org mode buffer."
@@ -155,20 +163,19 @@ This command only useful in org mode buffer."
     (let ((org-agenda-window-setup 'only-window)
           (buffer (current-buffer))
           (search-string
-           (if mark-active
-               (buffer-substring-no-properties
-                (region-beginning) (region-end))
-             "")))
+           (when mark-active
+             (buffer-substring-no-properties
+              (region-beginning) (region-end))))
+          (string-at-point
+           (org-picklink-grab-word)))
       ;; Call org-agenda
       (when (and search-string (> (length search-string) 0))
         (delete-region (region-beginning) (region-end)))
       (if search-tag
           (org-tags-view nil search-string)
-        (org-search-view
-         nil
-         (if (= (length search-string) 0)
-             "*"
-           search-string)))
+        (if search-string
+            (org-search-view nil search-string)
+          (org-search-view nil string-at-point t)))
       ;; Update `header-line-format'
       (with-current-buffer (get-buffer org-agenda-buffer)
         (org-picklink-mode 1)
