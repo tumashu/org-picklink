@@ -56,7 +56,7 @@
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap "q" 'org-picklink-quit-window)
     (define-key keymap "i" 'org-picklink-store-link)
-    (define-key keymap "B" 'org-picklink-toggle-breadcrumbs)
+    (define-key keymap "b" 'org-picklink-toggle-breadcrumbs)
     (define-key keymap (kbd "<return>") 'org-picklink-store-link-and-quit-window)
     keymap)
   "Keymap for org-picklink-mode.")
