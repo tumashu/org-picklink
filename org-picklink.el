@@ -47,6 +47,8 @@
 (defvar org-picklink-links nil
   "Record all links info.")
 
+(defvar org-picklink-enable-breadcrumbs nil)
+
 (defvar org-picklink-breadcrumbs-separator "/"
   "The separator used by org-picklink's breadcrumbs.")
 
@@ -54,15 +56,17 @@
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap "q" 'org-picklink-quit-window)
     (define-key keymap "i" 'org-picklink-store-link)
+    (define-key keymap "B" 'org-picklink-toggle-breadcrumbs)
     (define-key keymap (kbd "<return>") 'org-picklink-store-link-and-quit-window)
     keymap)
   "Keymap for org-picklink-mode.")
 
 ;;;###autoload
-(defun org-picklink-store-link (&optional ignore-breadcrumbs)
+(defun org-picklink-store-link (&optional breadcrumbs)
   "Store id link of current headline.
 
-If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
+If BREADCRUMBS is t, breadcurmbs will be included in link
+description."
   (interactive "P")
   (let ((org-agenda-show-outline-path nil)
         (selected-string
@@ -74,7 +78,8 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
 		           (org-agenda-error))
       (let* ((id (concat "id:" (org-id-get (point) t)))
              (breadcrumbs
-              (when (and (not ignore-breadcrumbs)
+              (when (and (or breadcrumbs
+                             org-picklink-enable-breadcrumbs)
                          org-prefix-has-breadcrumbs)
                 (let ((s (org-format-outline-path
                           (org-get-outline-path)
@@ -90,6 +95,15 @@ If IGNORE-BREADCRUMBS is t, ignore breadcurmbs."
           (message "Store link: [[%s][%s]]" (concat (substring id 0 9) "...") desc)
           (push link org-picklink-links))))
     (org-agenda-next-item 1)))
+
+(defun org-picklink-toggle-breadcrumbs ()
+  "Toggle org picklink breadcrumbs."
+  (interactive)
+  (setq org-picklink-enable-breadcrumbs
+        (not org-picklink-enable-breadcrumbs))
+  (if org-picklink-enable-breadcrumbs
+      (message "org-picklink: breadcrumbs is enabled.")
+    (message "org-picklink: breadcrumbs is disabled.")))
 
 ;;;###autoload
 (defun org-picklink-quit-window ()
@@ -165,7 +179,8 @@ This command only useful in org mode buffer."
                  "## "
                  "`\\[org-picklink-store-link]':Store Link  "
                  "`\\[org-picklink-quit-window]':Quit  "
-                 "`\\[org-picklink-store-link-and-quit-window]':Store and Quit "
+                 "`\\[org-picklink-store-link-and-quit-window]':Store and Quit  "
+                 "`\\[org-picklink-toggle-breadcrumbs]':Breadcrumbs "
                  "##"))
                (buffer-name buffer)))))))
 
