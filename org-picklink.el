@@ -47,6 +47,9 @@
 (defvar org-picklink-links nil
   "Record all links info.")
 
+(defvar org-picklink-link-type 'headline
+  "The link type used to store.")
+
 (defvar org-picklink-enable-breadcrumbs nil)
 
 (defvar org-picklink-breadcrumbs-separator "/"
@@ -57,6 +60,7 @@
     (define-key keymap "q" 'org-picklink-quit-window)
     (define-key keymap "i" 'org-picklink-store-link)
     (define-key keymap "b" 'org-picklink-toggle-breadcrumbs)
+    (define-key keymap "t" 'org-picklink-set-link-type)
     (define-key keymap (kbd "<return>") 'org-picklink-store-link-and-quit-window)
     keymap)
   "Keymap for org picklink mode.")
@@ -77,10 +81,10 @@ description."
     (org-with-point-at (or (org-get-at-bol 'org-hd-marker)
 		           (org-agenda-error))
       (let* ((id (concat "id:" (org-id-get (point) t)))
+             (attach (org-attach-dir t))
              (breadcrumbs
-              (when (and (or breadcrumbs
-                             org-picklink-enable-breadcrumbs)
-                         org-prefix-has-breadcrumbs)
+              (when (or breadcrumbs
+                        org-picklink-enable-breadcrumbs)
                 (let ((s (org-format-outline-path
                           (org-get-outline-path)
 	                  (1- (frame-width))
@@ -89,7 +93,10 @@ description."
              (desc (or selected-string
                        (concat breadcrumbs
                                (org-entry-get (point) "ITEM"))))
-             (link (list :link id :description desc :type "id")))
+             (link
+              (cl-case org-picklink-link-type
+                (headline (list :link id :description desc :type "id"))
+                (attach (list :link attach :description (concat desc "(ATTACH)") :type "file")))))
         (if (member link org-picklink-links)
             (message "This link has been stored.")
           (message "Store link: [[%s][%s]]" (concat (substring id 0 9) "...") desc)
@@ -105,6 +112,13 @@ description."
       (message "org-picklink: breadcrumbs is enabled.")
     (message "org-picklink: breadcrumbs is disabled.")))
 
+(defun org-picklink-set-link-type ()
+  "Set the link type"
+  (interactive)
+  (setq org-picklink-link-type
+        (intern (completing-read "Link type: " '(headline attach))))
+  (message "org-picklink: use %s link type." org-picklink-link-type))
+
 (defun org-picklink-grab-word ()
   "Grab word at point, which used to build search string."
   (buffer-substring
@@ -118,6 +132,8 @@ description."
   "Quit org agenda window and insert links to org mode buffer."
   (interactive)
   (setq header-line-format nil)
+  (setq org-picklink-link-type 'headline)
+  (setq org-picklink-enable-breadcrumbs nil)
   (org-picklink-mode -1)
   (org-agenda-quit)
   (setq org-picklink-links
@@ -187,7 +203,8 @@ This command only useful in org mode buffer."
                  "`\\[org-picklink-store-link]':Store Link  "
                  "`\\[org-picklink-quit-window]':Quit  "
                  "`\\[org-picklink-store-link-and-quit-window]':Store and Quit  "
-                 "`\\[org-picklink-toggle-breadcrumbs]':Breadcrumbs "
+                 "`\\[org-picklink-toggle-breadcrumbs]':Breadcrumbs  "
+                 "`\\[org-picklink-set-link-type]':Link Type "
                  "##"))
                (buffer-name buffer)))))))
 
