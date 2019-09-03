@@ -80,26 +80,28 @@ description."
     (deactivate-mark)
     (org-with-point-at (or (org-get-at-bol 'org-hd-marker)
 		           (org-agenda-error))
-      (let* ((id (concat "id:" (org-id-get (point) t)))
-             (attach (org-attach-dir t))
+      (let* ((id (org-id-get (point) t))
+             (attach-dir (org-attach-dir t))
              (breadcrumbs
               (when (or breadcrumbs
                         org-picklink-enable-breadcrumbs)
                 (let ((s (org-format-outline-path
                           (org-get-outline-path)
-	                  (1- (frame-width))
-	                  nil org-picklink-breadcrumbs-separator)))
+                          (1- (frame-width))
+                          nil org-picklink-breadcrumbs-separator)))
                   (if (eq "" s) "" (concat s org-picklink-breadcrumbs-separator)))))
-             (desc (or selected-string
+             (item (or selected-string
                        (concat breadcrumbs
                                (org-entry-get (point) "ITEM"))))
              (link
               (cl-case org-picklink-link-type
-                (headline (list :link id :description desc :type "id"))
-                (attach (list :link attach :description (concat desc "(ATTACH)") :type "file")))))
+                (headline (list :link (concat "id:" id) :description item :type "id"))
+                (attach (list :link attach-dir :description (concat item "(ATTACH)") :type "file")))))
         (if (member link org-picklink-links)
-            (message "This link has been stored.")
-          (message "Store link: [[%s][%s]]" (concat (substring id 0 9) "...") desc)
+            (message "This link has been stored, ignore it!")
+          (message "Store link: [[%s][%s]]"
+                   (concat (substring (plist-get link :link) 0 9) "...")
+                   (plist-get link :description))
           (push link org-picklink-links))))
     (org-agenda-next-item 1)))
 
