@@ -141,26 +141,27 @@ description."
   (setq org-picklink-enable-breadcrumbs nil)
   (org-picklink-mode -1)
   (org-agenda-quit)
-  (when (bufferp org-picklink-buffer)
-    (switch-to-buffer org-picklink-buffer))
-  (setq org-picklink-links
-        (reverse org-picklink-links))
-  ;; When a link is found at point, insert ", "
-  (when (save-excursion
-          (let* ((end (point))
-                 (begin (line-beginning-position))
-                 (string (buffer-substring-no-properties
-                          begin end)))
-            (and (string-match-p "]]$" string)
-                 (not (string-match-p ", *$" string)))))
-    (insert ", "))
-  (dolist (link org-picklink-links)
-    (org-insert-link nil (plist-get link :link) (plist-get link :description))
-    (pop org-picklink-links)
-    (when org-picklink-links
-      (cond ((org-in-item-p)
-             (call-interactively #'org-insert-item))
-            (t (insert " "))))))
+  (if (not (bufferp org-picklink-buffer))
+      (message "org-picklink-buffer is not a valid buffer")
+    (switch-to-buffer org-picklink-buffer)
+    (setq org-picklink-links
+          (reverse org-picklink-links))
+    ;; When a link is found at point, insert ", "
+    (when (save-excursion
+            (let* ((end (point))
+                   (begin (line-beginning-position))
+                   (string (buffer-substring-no-properties
+                            begin end)))
+              (and (string-match-p "]]$" string)
+                   (not (string-match-p ", *$" string)))))
+      (insert ", "))
+    (dolist (link org-picklink-links)
+      (org-insert-link nil (plist-get link :link) (plist-get link :description))
+      (pop org-picklink-links)
+      (when org-picklink-links
+        (cond ((org-in-item-p)
+               (call-interactively #'org-insert-item))
+              (t (insert " ")))))))
 
 ;;;###autoload
 (defun org-picklink-store-link-and-quit-window ()
