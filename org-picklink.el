@@ -65,6 +65,9 @@
     keymap)
   "Keymap for org picklink mode.")
 
+(defvar org-picklink-buffer nil
+  "The buffer calling `org-picklink'.")
+
 ;;;###autoload
 (defun org-picklink-store-link (&optional breadcrumbs)
   "Store id link of current headline.
@@ -138,6 +141,8 @@ description."
   (setq org-picklink-enable-breadcrumbs nil)
   (org-picklink-mode -1)
   (org-agenda-quit)
+  (when (bufferp org-picklink-buffer)
+    (switch-to-buffer org-picklink-buffer))
   (setq org-picklink-links
         (reverse org-picklink-links))
   ;; When a link is found at point, insert ", "
@@ -178,8 +183,8 @@ This command only useful in org mode buffer."
   (interactive "P")
   (if (not (derived-mode-p 'org-mode))
       (message "org-picklink works only in org-mode!")
-    (let ((org-agenda-window-setup 'only-window)
-          (buffer (current-buffer))
+    (setq org-picklink-buffer (current-buffer))
+    (let ((org-agenda-window-setup 'current-window)
           (search-string
            (when mark-active
              (buffer-substring-no-properties
@@ -208,7 +213,7 @@ This command only useful in org mode buffer."
                  "`\\[org-picklink-toggle-breadcrumbs]':Breadcrumbs  "
                  "`\\[org-picklink-set-link-type]':Link Type "
                  "##"))
-               (buffer-name buffer)))))))
+               (buffer-name org-picklink-buffer)))))))
 
 (define-minor-mode org-picklink-mode
   "org picklink mode"
