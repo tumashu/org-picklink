@@ -140,7 +140,8 @@ description."
   (setq org-picklink-link-type 'headline)
   (setq org-picklink-enable-breadcrumbs nil)
   (org-picklink-mode -1)
-  (org-agenda-quit)
+  (let ((org-agenda-sticky t))
+    (org-agenda-quit))
   (if (not (bufferp org-picklink-buffer))
       (message "org-picklink-buffer is not a valid buffer")
     (switch-to-buffer org-picklink-buffer)
@@ -185,7 +186,8 @@ This command only useful in org mode buffer."
   (if (not (derived-mode-p 'org-mode))
       (message "org-picklink works only in org-mode!")
     (setq org-picklink-buffer (current-buffer))
-    (let ((org-agenda-window-setup 'current-window)
+    (let ((org-agenda-sticky t)
+          (org-agenda-window-setup 'current-window)
           (search-string
            (when mark-active
              (buffer-substring-no-properties
@@ -201,7 +203,7 @@ This command only useful in org mode buffer."
             (org-search-view nil search-string)
           (org-search-view nil string-at-point t)))
       ;; Update `header-line-format'
-      (with-current-buffer (get-buffer org-agenda-buffer)
+      (with-current-buffer (get-buffer org-agenda-buffer-name)
         (org-picklink-mode 1)
         (setq header-line-format
               (format
